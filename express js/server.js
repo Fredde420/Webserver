@@ -23,29 +23,27 @@
 // app.listen(port, () => {
 //   console.log(`Example app listening on port ${port}`)
 // })
-
+const db = require("./services/db")
 const express = require('express')
 const app = express()
 const port = 3001
-const mysql = require('mysql')
 
 
-const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root', 
-  password: '', 
-  database: 'newtest' 
-})
 
-db.connect((err) => {
-  if (err) throw err
-  console.log('Connected to database')
-})
+// const db = mysql.createConnection({
+//   host: 'localhost',
+//   user: 'root', 
+//   password: '', 
+//   database: 'newtest' 
+// })
 
-app.get('/users', (req, res) => {
-  const sql = 'SELECT * FROM users' 
-  db.query(sql, (err, result) => {
-    if (err) throw err
+// db.connect((err) => {
+//   if (err) throw err
+//   console.log('Connected to database')
+// })
+
+app.get('/users', async (req, res) => {
+  const users = await db.getUsers()
     const htmlResponse = `
       <html>
         <head></head>
@@ -56,7 +54,7 @@ app.get('/users', (req, res) => {
               <th>Name</th>
               <th>Email</th>
             </tr>
-            ${result.map(user => `
+            ${users.map(user => `
               <tr>
                 <td>${user.id}</td>
                 <td>${user.name}</td>
@@ -69,7 +67,8 @@ app.get('/users', (req, res) => {
     `
     res.send(htmlResponse)
   })
-})
+
+  
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)

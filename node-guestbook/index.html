@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Guestbook</title>
+  </head>
+  <body>
+    <h1>Guestbook</h1>
+    <form id="guestbook-form">
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" required />
+      <br />
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required />
+      <br />
+      <label for="homepage">Homepage:</label>
+      <input type="url" id="homepage" name="homepage" />
+      <br />
+      <label for="comment">Comment:</label>
+      <textarea id="comment" name="comment" required></textarea>
+      <br />
+      <button type="submit">Add Entry</button>
+    </form>
+    <hr />
+    <div id="guestbook-entries"></div>
+    <script>
+      const form = document.getElementById("guestbook-form");
+      const entriesDiv = document.getElementById("guestbook-entries");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const data = {
+          name: formData.get("name"),
+          email: formData.get("email"),
+          homepage: formData.get("homepage"),
+          comment: formData.get("comment"),
+        };
+        try {
+          const response = await fetch("http://localhost:3001/api/guestbook", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          if (response.ok) {
+            form.reset();
+            loadEntries();
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      });
+
+      const loadEntries = async () => {
+        try {
+          const response = await fetch("http://localhost:3001/api/guestbook");
+          const data = await response.json();
+          entriesDiv.innerHTML = "";
+          data.forEach((entry) => {
+            const div = document.createElement("div");
+            const entryTime = new Date(entry.time).toLocaleString();
+
+            div.innerHTML = `
+              <p><strong>${entry.name}</strong> (${entry.email})</p>
+              <p>${entry.comment}</p>
+              <p>${
+                entry.homepage
+                  ? `<a href="${entry.homepage}" target="_blank">${entry.homepage}</a>`
+                  : ""
+              }</p>
+              <p>${entryTime}</p>
+            `;
+            entriesDiv.appendChild(div);
+          });
+        } catch (err) {
+          console.error(err);
+        }
+      };
+
+      loadEntries();
+    </script>
+  </body>
+</html>
