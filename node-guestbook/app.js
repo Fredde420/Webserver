@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const mysql = require('mysql');
+const bcrypt = require('bcrypt');
 
 const app = express();
 app.use(cors());
@@ -33,23 +34,58 @@ app.get('/api/guestbook', (req, res) => {
 });
 
 app.post('/api/guestbook', (req, res) => {
-  const { name, email, homepage, comment } = req.body;
-  const sql = 'INSERT INTO guestbook (name, email, homepage, comment) VALUES (?, ?, ?, ?)';
-  db.query(sql, [name, email, homepage, comment], (err, result) => {
+  const { name, password, email, homepage, comment } = req.body;
+
+  bcrypt.hash(password, 10, (err, hash) => {
+    if (err) throw err;
+  const sql = 'INSERT INTO guestbook (name, password, email, homepage, comment) VALUES (?, ?, ?, ?, ?)';
+  db.query(sql, [name, hash, email, homepage, comment], (err, result) => {
     if (err) throw err;
     res.send('Guestbook entry added...');
   });
 });
+});
+
+app.post('/login', (req, res) => {
+  const sql = 'SELECT * FROM guestbook';
+  db.query(sql, (err, result) => {
+    if (err) throw err;
+    res.send(result.map(entry => {
+      return {
+        id: entry.id,
+        name: entry.name,
+        email: entry.email,
+        homepage: entry.homepage,
+        comment: entry.comment,
+        password: '',
+      };
+    }));
+  });
+});
+
 
 app.put('/api/guestbook/:id', (req, res) => {
-  const { name, email, homepage, comment } = req.body;
-  const sql = 'UPDATE guestbook SET name = ?, email= ?, homepage = ?, comment = ? WHERE id = ?';
+  const { name, password, email, homepage, comment } = req.body;
+  const sql = 'UPDATE guestbook SET name = ?, password = ?, email = ?, homepage = ?, comment = ? WHERE id = ?';
   
-  db.query(sql, [name, email, homepage, comment, req.params.id], (err, result) => {
-    if (err) throw err;
-    res.send('Guestbook entry added...');
-    
-  });
+  if (password) {
+    bcrypt.hash(password, 10, (err, hash) => {
+      if (err) throw err;
+
+      const sql = 'UPDATE guestbook SET name = ?, password = ?, email = ?, homepage = ?, comment = ? WHERE id = ?';
+      db.query(sql, [name, hash, email, homepage, comment, req.params.id], (err, result) => {
+        if (err) throw err;
+        res.send('Guestbook entry updated...');
+      });
+    });
+  } else {
+    // If the password isn't being updated, just update the other fields
+    const sql = 'UPDATE guestbook SET name = ?, email = ?, homepage = ?, comment = ? WHERE id = ?';
+    db.query(sql, [name, email, homepage, comment, req.params.id], (err, result) => {
+      if (err) throw err;
+      res.send('Guestbook entry updated...');
+    });
+  }
 });
 
 const PORT = process.env.PORT || 3001;
