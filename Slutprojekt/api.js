@@ -7,7 +7,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Skapa en databasanslutning
+
 const connection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
@@ -20,6 +20,7 @@ connection.connect((err) => {
   console.log('Connected to MySQL!');
 });
 
+
 const userSchema = {
   id: { type: Number, primary: true, autoIncrement: true },
   username: { type: String, required: true, unique: true },
@@ -27,11 +28,13 @@ const userSchema = {
   email: { type: String, required: true, unique: true },
 };
 
+
 const hashPassword = async (password) => {
   const salt = await bcrypt.genSalt(10);
   const hash = await bcrypt.hash(password, salt);
   return hash;
 };
+
 
 const comparePassword = async (candidatePassword, hash) => {
   const match = await bcrypt.compare(candidatePassword, hash);
@@ -42,8 +45,8 @@ app.get('/', (req, res) => {
   res.sendFile(process.cwd() + '/index.html');
 });
 
-app.post('/users', authenticateToken, async (req, res) => {
-  // kolla att det finns giltig token i AUTHTORIZATION-headern
+app.post('/users', async (req, res) => {
+  // router är öppen för att kunna registrera konton
   const { username, password, email } = req.body;
   console.log(req.body)
   const hashedPassword = await hashPassword(password);
