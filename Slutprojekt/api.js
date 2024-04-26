@@ -5,7 +5,9 @@ const bcrypt = require('bcrypt');
 
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
+// Skapa en databasanslutning
 const connection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
@@ -40,8 +42,10 @@ app.get('/', (req, res) => {
   res.sendFile(process.cwd() + '/index.html');
 });
 
-app.post('/users', async (req, res) => {
+app.post('/users', authenticateToken, async (req, res) => {
+  // kolla att det finns giltig token i AUTHTORIZATION-headern
   const { username, password, email } = req.body;
+  console.log(req.body)
   const hashedPassword = await hashPassword(password);
   const newUser = { username, password: hashedPassword, email };
   const query = `INSERT INTO users SET?`;
@@ -51,7 +55,8 @@ app.post('/users', async (req, res) => {
   });
 });
 
-app.get('/users/:id', (req, res) => {
+app.get('/users/:id', authenticateToken, (req, res) => {
+  // kolla att det finns giltig token i AUTHTORIZATION-headern
   const { id } = req.params;
   const query = `SELECT * FROM users WHERE id =?`;
   connection.query(query, [id], (err, results) => {
@@ -61,7 +66,8 @@ app.get('/users/:id', (req, res) => {
   });
 });
 
-app.get('/users', (req, res) => {
+app.get('/users', authenticateToken, (req, res) => {
+  // kolla att det finns giltig token i AUTHTORIZATION-headern
   const query = `SELECT * FROM users`;
   connection.query(query, (err, results) => {
     if (err) throw err;
@@ -69,7 +75,8 @@ app.get('/users', (req, res) => {
   });
 });
 
-app.put('/users/:id', async (req, res) => {
+app.put('/users/:id', authenticateToken, async (req, res) => {
+  // kolla att det finns giltig token i AUTHTORIZATION-headern
   const { id } = req.params;
   const { username, password, email } = req.body;
   const hashedPassword = await hashPassword(password);
@@ -112,6 +119,7 @@ function authenticateToken(req, res, next) {
 }
 
 app.get('/protected', authenticateToken, (req, res) => {
+  // kolla att det finns giltig token i AUTHTORIZATION-headern
   res.send('This is a protected route');
 });
 
